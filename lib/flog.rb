@@ -271,9 +271,12 @@ class Flog < MethodBasedSexpProcessor
   # to the supplied block.
 
   def penalize_by bonus
+    previous_multiplier = @multiplier
     @multiplier += bonus
     yield
-    @multiplier -= bonus
+    previous_multiplier
+  ensure
+    @multiplier = previous_multiplier
   end
 
   ##

@@ -103,6 +103,38 @@ class TestFlog < FlogTest
     assert_in_epsilon 1, @flog.multiplier
   end
 
+  def test_penalize_by_restores_exact_multiplier
+    @flog.penalize_by(0.4) {}
+
+    assert_equal 1.0, @flog.multiplier
+  end
+
+  def test_penalize_by_restores_multiplier_after_exception
+    assert_raises RuntimeError do
+      @flog.penalize_by(0.4) { raise "parse failed" }
+    end
+
+    assert_equal 1.0, @flog.multiplier
+  end
+
+  def test_flog_ruby_preceding_method_does_not_change_score
+    ruby = <<~RUBY
+      class Before
+        def score; 0.5; end
+      end
+      class Nested
+        def score; call(call(call(call(call(0.5))))); end
+      end
+      class After
+        def score; 0.5; end
+      end
+    RUBY
+
+    @flog.flog_ruby ruby
+
+    assert_equal @flog.calls.fetch("Before#score"), @flog.calls.fetch("After#score")
+  end
+
   def test_process_alias
     sexp = s(:alias, s(:lit, :a), s(:lit, :b))
 
